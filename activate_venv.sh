@@ -1,0 +1,1 @@
+C:/Users/johnsonlacosss/Desktop/CS320/venv/Scripts/activate.bat

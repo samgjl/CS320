@@ -1,0 +1,10 @@
+numpy
+pathlib
+IPython
+matplotlib
+tensorflow
+tensorflow_datasets
+keras
+keras_cv
+tqdm
+sklearn

@@ -6,3 +6,7 @@ crash.log
 
 # For built boxes
 *.box
+
+# All data files and venv
+venv
+data
