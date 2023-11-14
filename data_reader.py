@@ -67,23 +67,25 @@ class DataReader:
         train_y_paths.sort()
         # Finalize:
         assert(len(train_X_paths) == len(train_y_paths))
-        print(f"X : {len(train_X_paths)} files | y: {len(train_y_paths)} files")
+        print(f"---\nX : {len(train_X_paths)} files | y: {len(train_y_paths)} files\n---")
         self.X_paths = train_X_paths
         self.y_paths = train_y_paths
         return train_X_paths, train_y_paths
     
-    def get_tf_data(self, X_paths = None, y_paths = None, new_size = None):
+    def get_tf_data(self, X_paths = None, y_paths = None, new_size = None, desired_amount = None):
         # Ensure we have paths:
         if X_paths == None:
             X_paths = self.X_paths
         if y_paths == None:
             y_paths = self.y_paths
+        if desired_amount == None:
+            desired_amount = len(X_paths)
         # Get tf object from each file:
         # Next, turn the files into points:
         X = []
         y = []
 
-        for i in range(1000): # WE RUN OUT OF RAM REALLY QUICKLY ON THIS...
+        for i in range(desired_amount): # WE RUN OUT OF RAM REALLY QUICKLY ON THIS...
             # Get the corresponding files:
             file_X = tf.io.read_file(X_paths[i])
             file_y = tf.io.read_file(y_paths[i])
@@ -99,6 +101,7 @@ class DataReader:
         
         train_X, val_X, train_y, val_y = train_test_split(X, y, test_size=0.2, random_state=0)
 
+        print(f"---\n{len(train_X)} in train | {len(val_X)} in val\n---")
         self.train_ds = tf.data.Dataset.from_tensor_slices((train_X, train_y))
         self.val_ds = tf.data.Dataset.from_tensor_slices((val_X, val_y))
         return self.train_ds, self.val_ds

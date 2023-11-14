@@ -1,1 +1,0 @@
-C:/Users/johnsonlacosss/Desktop/CS320/venv/Scripts/deactivate.bat

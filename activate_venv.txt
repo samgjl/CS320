@@ -1,0 +1,1 @@
+cmd "C:\Users\johnsonlacosss\Documents\GitHub\CS320\venv\Scripts\activate.bat"
