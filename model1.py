@@ -140,5 +140,5 @@ for i in pred:
     k += 1
     if k == 4: break
 plt.suptitle('Prediction After 20 Epochs (No Fine-tuning)', color='red', size=20)
-plt.show()
 plt.savefig("model1_results/results.png")
+plt.show()

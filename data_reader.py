@@ -96,11 +96,13 @@ class DataReader:
         train_X_paths.sort()
         train_y_paths.sort()
         # Finalize:
-        assert(len(train_X_paths) == len(train_y_paths))
+        assert(len(train_X_paths) == len(train_y_paths) and len(train_X_paths) != 0)
         print(f"---\nX : {len(train_X_paths)} files | y: {len(train_y_paths)} files\n---")
+        
         self.X_paths = train_X_paths
         self.y_paths = train_y_paths
         return train_X_paths, train_y_paths
+    
     def get_tf_data(self, X_paths = None, y_paths = None, new_size = None, desired_amount = None):
         # Ensure we have paths:
         if X_paths == None:
