@@ -23,7 +23,7 @@ train_y_masterpath = "data/train/targets"
 # Get data:
 dr = DataReader(train_X_masterpath, train_y_masterpath)
 dr.get_file_lists()
-train, val = dr.get_tf_data(new_size = (256, 256), desired_amount = 1000)
+train, val = dr.get_tf_data(new_size = (512, 512), desired_amount = 1000)
 
 print(type(train), "\n", type(val))
 
@@ -38,12 +38,13 @@ STEPS_PER_EPOCH = 800//BATCH
 VALIDATION_STEPS = 200//BATCH
 
 train = dr.augment(train)
-train = train.cache().shuffle(BUFFER).batch(BATCH).repeat()
+# train = train.cache().shuffle(BUFFER).batch(BATCH).repeat()
+train = train.shuffle(BUFFER).batch(BATCH).repeat()
 train = train.prefetch(buffer_size=AT)
 val = val.batch(BATCH)
 
 # Use pre-trained DenseNet121 without head
-base = keras.applications.DenseNet121(input_shape=[256,256,3],
+base = keras.applications.DenseNet121(input_shape=[512, 512,3],
                                       include_top=False,
                                       weights='imagenet')
 
@@ -71,7 +72,7 @@ upstack = [pix2pix.upsample(512,3),
           pix2pix.upsample(64,3)]
 
 # define the input layer
-inputs = keras.layers.Input(shape=[256,256,3])
+inputs = keras.layers.Input(shape=[512, 512,3])
 
 # downsample
 down = downstack(inputs)
@@ -107,7 +108,7 @@ hist_1 = unet.fit(train,
                validation_data=val,
                steps_per_epoch=STEPS_PER_EPOCH,
                validation_steps=VALIDATION_STEPS,
-               epochs=0,
+               epochs=5,
                verbose=1)
 
 # select a validation data batch
