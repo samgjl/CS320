@@ -107,7 +107,7 @@ hist_1 = unet.fit(train,
                validation_data=val,
                steps_per_epoch=STEPS_PER_EPOCH,
                validation_steps=VALIDATION_STEPS,
-               epochs=0,
+               epochs=20,
                verbose=1)
 
 # select a validation data batch
@@ -117,20 +117,20 @@ pred = unet.predict(img)
 plt.figure(figsize=(20,28))
 
 
-NORM = mpl.colors.Normalize(vmin=0, vmax=2)
+NORM = mpl.colors.Normalize(vmin=0, vmax=58)
 
 k = 0
 for i in pred:
     # plot the predicted mask
     plt.subplot(4,3,1+k*3)
     i = tf.argmax(i, axis=-1)
-    plt.imshow(i,cmap='gray', norm=NORM)
+    plt.imshow(i*128,cmap='Greys', norm=NORM)
     plt.axis('off')
     plt.title('Prediction')
 
     # plot the groundtruth mask
     plt.subplot(4,3,2+k*3)
-    plt.imshow(mask[k], cmap='gray', norm=NORM)
+    plt.imshow(mask[k]*128, cmap='Greys', norm=NORM)
     plt.axis('off')
     plt.title('Ground Truth')
 
@@ -141,8 +141,6 @@ for i in pred:
     plt.title('Actual Image')
     k += 1
     if k == 4: break
-# plt.suptitle('Prediction After 20 Epochs (No Fine-tuning)', color='red', size=20)
-plt.savefig("model2_results/result.png")
+plt.suptitle('Prediction After 20 Epochs (No Fine-tuning)', color='red', size=20)
+# plt.savefig("model2_results/result.png")
 plt.show()
-
-exit(0)
