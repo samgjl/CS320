@@ -103,7 +103,7 @@ class DataReader:
         self.y_paths = train_y_paths
         return train_X_paths, train_y_paths
     
-    def get_tf_data(self, X_paths = None, y_paths = None, new_size = None, desired_amount = None):
+    def get_tf_data(self, X_paths = None, y_paths = None, new_size = None, desired_amount = None, split = True):
         # Ensure we have paths:
         if X_paths == None:
             X_paths = self.X_paths
@@ -130,11 +130,20 @@ class DataReader:
             y = [self.resize_mask(m, new_size) for m in y]
             self.size = new_size
         
-        train_X, val_X, train_y, val_y = train_test_split(X, y, test_size=0.2, random_state=0)
+        if split:
+            train_X, val_X, train_y, val_y = train_test_split(X, y, test_size=0.2, random_state=0)
+            print(f"---\n{len(train_X)} in train | {len(val_X)} in val\n---")
+            self.train_ds = tf.data.Dataset.from_tensor_slices((train_X, train_y))
+            self.val_ds = tf.data.Dataset.from_tensor_slices((val_X, val_y))
+        else:
+            train_X = X
+            train_y = y
+            print(f"---\n{len(train_X)} loaded\n---")
+            self.train_ds = tf.data.Dataset.from_tensor_slices((train_X, train_y))
+            self.val_ds = None
 
-        print(f"---\n{len(train_X)} in train | {len(val_X)} in val\n---")
-        self.train_ds = tf.data.Dataset.from_tensor_slices((train_X, train_y))
-        self.val_ds = tf.data.Dataset.from_tensor_slices((val_X, val_y))
+        
+        
         return self.train_ds, self.val_ds
     
     def augment(self, train_ds):
@@ -167,7 +176,7 @@ class DataReader:
     def resize_mask(self, mask, size = (128,128)):
         # resize the mask
         mask = tf.image.resize(mask, size)
-        mask = tf.cast(mask, tf.uint8)
+        mask = tf.cast(mask, tf.float32) ############## WAS UINT8
         return mask
 
     def brightness(self, img, mask):
@@ -195,7 +204,7 @@ class DataReader:
         # resize afer cropping
         mask = tf.image.resize(mask, (128,128))
         # cast to integers as they are class numbers
-        mask = tf.cast(mask, tf.uint8)
+        mask = tf.cast(mask, tf.float32) ################# WAS UINT8
         return img, mask
     # flip both image and mask identically
     def flip_hori(self, img, mask):
