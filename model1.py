@@ -14,7 +14,7 @@ from keras.models import Sequential
 from tqdm import tqdm
 import sklearn
 from sklearn.model_selection import train_test_split
-from custom_functions import *
+from tensorflow_examples.models.pix2pix import pix2pix
 from data_reader import DataReader
 
 #setting the batch size
@@ -56,9 +56,6 @@ downstack = keras.Model(inputs=base.input,
                        outputs=skip_outputs)
 # freeze the downstack layers
 downstack.trainable = False
-
-
-from tensorflow_examples.models.pix2pix import pix2pix
 
 # Four upstack layers for upsampling sizes
 # 4->8, 8->16, 16->32, 32->64

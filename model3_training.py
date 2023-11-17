@@ -56,11 +56,10 @@ skip_names = ['conv1/relu', # size 64*64
 
 #output of these layers
 skip_outputs = [base.get_layer(name).output for name in skip_names]
-#Building the downstack with the above layers. We use the pre-trained model as such, without any fine-tuning.
+# Build our downstack layers (where "downstack" means "max pooling")
 downstack = keras.Model(inputs=base.input,
                        outputs=skip_outputs)
-# freeze the downstack layers
-downstack.trainable = True ########################################################## ORIGINALLY SET TO FALSE
+downstack.trainable = True # make sure we can train these
 
 # Four upstack layers for upsampling sizes
 # 4->8, 8->16, 16->32, 32->64
@@ -148,12 +147,12 @@ for i in pred:
     plt.title('Actual Image')
     k += 1
     if k == 4: break
-plt.suptitle('Prediction After 200 Epochs (No Fine-tuning)', color='red', size=20)
+plt.suptitle('Prediction After 200 Epochs', color='red', size=20)
 plt.savefig("model3_training/result.png")
 
 # Saving extras:
 f = open("model3_training/200EpochsHistory.txt", "w")
-f.write(str(hist))
+f.write(str(hist).replace('\'', '\"'))
 f.close
 unet.save("model3_training/model3.keras")
 
