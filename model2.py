@@ -18,7 +18,7 @@ import importlib.util
 import sys
 from data_reader import DataReader
 
-class StuffNet:
+class Model2:
 
     def __init__(self, filename=None):
         if filename == None:
