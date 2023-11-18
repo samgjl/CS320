@@ -1,22 +1,20 @@
-import os
 import numpy as np
-import pathlib
-import IPython.display as display
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow_examples.models.pix2pix import pix2pix
-# import tensorflow_datasets as tfd
 import keras
-import keras_cv
-from keras import layers
-from keras.models import Sequential
-from tqdm import tqdm
-import sklearn
-from sklearn.model_selection import train_test_split
-import importlib.util
-import sys
-from data_reader import DataReader
+import keras.backend as K
+
+def f1_loss(y_true, y_pred):
+    tp = K.sum(K.cast(y_true*y_pred, 'float'), axis=0)
+    tn = K.sum(K.cast((1-y_true)*(1-y_pred), 'float'), axis=0)
+    fp = K.sum(K.cast((1-y_true)*y_pred, 'float'), axis=0)
+    fn = K.sum(K.cast(y_true*(1-y_pred), 'float'), axis=0) 
+
+    p = tp / (tp + fp + K.epsilon())
+    r = tp / (tp + fn + K.epsilon())
+
+    f1 = 2*p*r / (p+r+K.epsilon())
+    f1 = tf.where(tf.math.is_nan(f1), tf.zeros_like(f1), f1)
+    return 1 - K.mean(f1)
 
 class Model4:
     def __init__(self, image_dims = (256,256), safe = False):
@@ -28,13 +26,13 @@ class Model4:
         self.model = keras.Model(inputs=self.input, outputs=self.output)
 
     def compile_bce(self):
-        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001),
+        self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=0.001),
                     loss=keras.losses.BinaryCrossentropy(),
-                    metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall(), keras.metrics.F1Score()])
+                    metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
     def compile_scce(self):
-        self.model.compile(optimizer=keras.optimizers.Adam(learning_rate=0.001),
-                    loss=keras.losses.SparseCategoricalCrossentropy(),
-                    metrics=['accuracy'])
+        self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=0.001),
+                    loss=f1_loss,
+                    metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
 
 
     # This function will make a U-Net style model
@@ -151,6 +149,7 @@ class Model4:
         
         # Output layer:
         self.output = keras.layers.Conv2D(1, (1,1), activation="sigmoid")(upscale1) # We want this to be sigmoid so we get binary output
+        
 
 
 if __name__ == "__main__":
