@@ -103,7 +103,7 @@ class DataReader:
         self.y_paths = train_y_paths
         return train_X_paths, train_y_paths
     
-    def get_tf_data(self, X_paths = None, y_paths = None, new_size = None, desired_amount = None, split = True):
+    def get_tf_data(self, X_paths = None, y_paths = None, new_size = None, desired_amount = None, test_data=False):
         # Ensure we have paths:
         if X_paths == None:
             X_paths = self.X_paths
@@ -130,21 +130,20 @@ class DataReader:
             y = [self.resize_mask(m, new_size) for m in y]
             self.size = new_size
         
-        if split:
+        if not test_data:
             train_X, val_X, train_y, val_y = train_test_split(X, y, test_size=0.2, random_state=0)
             print(f"---\n{len(train_X)} in train | {len(val_X)} in val\n---")
             self.train_ds = tf.data.Dataset.from_tensor_slices((train_X, train_y))
             self.val_ds = tf.data.Dataset.from_tensor_slices((val_X, val_y))
-        else:
-            train_X = X
-            train_y = y
-            print(f"---\n{len(train_X)} loaded\n---")
-            self.train_ds = tf.data.Dataset.from_tensor_slices((train_X, train_y))
-            self.val_ds = None
-
+            return self.train_ds, self.val_ds
+        train_X = X
+        train_y = y
+        print(f"---\n{len(train_X)} loaded\n---")
+        test_ds = tf.data.Dataset.from_tensor_slices((train_X, train_y))
+        test_X = tf.data.Dataset.from_tensor_slices(train_X)
+        test_y = tf.data.Dataset.from_tensor_slices(train_y)
         
-        
-        return self.train_ds, self.val_ds
+        return test_ds, test_X, test_y
     
     def augment(self, train_ds):
         # Augment the data:
@@ -223,6 +222,22 @@ class DataReader:
         img = tf.image.rot90(img)
         mask = tf.image.rot90(mask)
         return img, mask
+    
+    # From Sam -- PS5
+    def print2DList(list2D):
+        print("Row: Actual | Column: Prediction")
+        # Header
+        print("  |", end = "")
+        for i in range(len(list2D)):
+            print("{:4}".format(i), end = "")
+        print("\n" + "-----"*len(list2D))
+        # Printing the list:
+        for i in range(len(list2D)):
+            print(i, "|", end = "")
+            for j in range(len(list2D[i])):
+                print("{:4}".format(list2D[i,j]), end = "")
+                print()
+        print("\n")
 
             
 if __name__ == "__main__":

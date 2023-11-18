@@ -39,7 +39,7 @@ STEPS_PER_EPOCH = 800//BATCH
 VALIDATION_STEPS = 200//BATCH
 
 train = dr.augment(train)
-train = train.cache().shuffle(BUFFER).batch(BATCH).repeat()
+train = train.shuffle(BUFFER).batch(BATCH).repeat()
 train = train.prefetch(buffer_size=AT)
 val = val.batch(BATCH)
 
@@ -88,7 +88,7 @@ for up, skip in zip(upstack,skips):
     out = keras.layers.Concatenate()([out,skip])
 
 # define the final transpose conv layer
-# image 128 by 128 with 59 classes
+# Each image is 256x256, with 2 classes across each.
 out = keras.layers.Conv2DTranspose(2, 3,
                                   strides=2,
                                   padding='same',

@@ -105,7 +105,7 @@ hist_1 = unet.fit(train,
                validation_data=val,
                steps_per_epoch=STEPS_PER_EPOCH,
                validation_steps=VALIDATION_STEPS,
-               epochs=1,
+               epochs=50,
                verbose=1)
 
 # select a validation data batch
