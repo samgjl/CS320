@@ -29,20 +29,25 @@ train, val = default_method()
 # Make model:
 image_dims = (256, 256)
 model4 = Model4(image_dims=image_dims)
-model4.compile_bce()
+# model4.compile_bce()
 # model4.compile_scce()
+model4.verbatim()
 unet = model4.model
+# unet = keras.models.load_model("model4_training/model4_original.keras")
+# unet.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=0.0025),
+#                     loss=keras.losses.CategoricalCrossentropy(),
+#                     metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
 
-weights = {
-    0: 4, 
-    1: 1
-}
+# weights = {
+#     0: 1, 
+#     1: 5
+# }
 history = unet.fit(train,
                validation_data=val,
                steps_per_epoch=STEPS_PER_EPOCH,
                validation_steps=VALIDATION_STEPS,
-               epochs=20,
-               class_weight = weights,
+               epochs=50,
+            #    class_weight = weights,
                verbose=1)
 
 # select a validation data batch

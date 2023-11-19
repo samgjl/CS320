@@ -25,15 +25,18 @@ class Model4:
         
         self.model = keras.Model(inputs=self.input, outputs=self.output)
 
-    def compile_bce(self):
-        self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=0.001),
+    def compile_bce(self, lr = 0.001):
+        self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=lr),
                     loss=keras.losses.BinaryCrossentropy(),
                     metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
-    def compile_scce(self):
-        self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=0.001),
+    def compile_f1(self, lr = 0.001):
+        self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=lr),
                     loss=f1_loss,
                     metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
-
+    def compile_scce(self, lr = 0.001):
+        self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=lr),
+                    loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                    metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
 
     # This function will make a U-Net style model
     def make_base_model(self, image_dims = (256, 256)):
@@ -66,7 +69,7 @@ class Model4:
         contract1 = keras.layers.Dropout(0.1)(contract1) # Dropout layer
         contract1 = keras.layers.Conv2D(filters, (3,3), activation="ReLU", kernel_initializer=keras.initializers.HeNormal(), padding="same")(contract1)
         batch_norm1 = keras.layers.BatchNormalization()(contract1)
-        activation1 = keras.layers.Activation("ReLU")(batch_norm1) # ReLU activation layer (tf.layers.Relu() also works)
+        activation1 = keras.layers.Activation("ReLU")(batch_norm1) # ReLU activation layer (layers.Relu() also works)
         max_pool1 = keras.layers.MaxPooling2D((2,2))(activation1) # Max pooling layer
         return contract1, max_pool1 
 
@@ -96,7 +99,7 @@ class Model4:
         contract1 = keras.layers.Dropout(0.1)(contract1) # Dropout layer
         contract1 = keras.layers.Conv2D(16, (3,3), activation="ReLU", kernel_initializer=keras.initializers.HeNormal(), padding="same")(contract1)
         batch_norm1 = keras.layers.BatchNormalization()(contract1)
-        activation1 = keras.layers.Activation("ReLU")(batch_norm1) # ReLU activation layer (tf.layers.Relu() also works)
+        activation1 = keras.layers.Activation("ReLU")(batch_norm1) # ReLU activation layer (layers.Relu() also works)
         max_pool1 = keras.layers.MaxPooling2D((2,2))(activation1) # Max pooling layer
         # Contracting path (2):
         contract2 = keras.layers.Conv2D(32, (3,3), activation="ReLU", kernel_initializer=keras.initializers.HeNormal(), padding="same")(max_pool1)
@@ -148,8 +151,10 @@ class Model4:
         upscale1 = keras.layers.Activation("ReLU")(upscale1)
         
         # Output layer:
-        self.output = keras.layers.Conv2D(1, (1,1), activation="sigmoid")(upscale1) # We want this to be sigmoid so we get binary output
+        self.output = keras.layers.Conv2D(2, (1,1), activation="sigmoid")(upscale1) # We want this to be sigmoid so we get binary output
+
         
+            
 
 
 if __name__ == "__main__":
