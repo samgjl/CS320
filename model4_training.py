@@ -31,12 +31,8 @@ image_dims = (256, 256)
 model4 = Model4(image_dims=image_dims)
 # model4.compile_bce()
 # model4.compile_scce()
-model4.verbatim()
+model4.compile_f1()
 unet = model4.model
-# unet = keras.models.load_model("model4_training/model4_original.keras")
-# unet.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=0.0025),
-#                     loss=keras.losses.CategoricalCrossentropy(),
-#                     metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
 
 # weights = {
 #     0: 1, 
@@ -88,7 +84,7 @@ plt.savefig("model4_training/result.png")
 f = open("model4_training/200EpochsHistory.txt", "w")
 f.write(str(history.history))
 f.close
-unet.save("model4_training/model4.keras")
+unet.save("model4_training/model4_f1.keras")
 
 plt.show()
 

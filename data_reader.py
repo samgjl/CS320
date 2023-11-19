@@ -239,21 +239,19 @@ class DataReader:
                 print()
         print("\n")
 
-def default_method():
+def default_method(desired_amount = None):
     train_X_masterpath = "data/train/images"
     train_y_masterpath = "data/train/targets"
     # Get data:
     dr = DataReader(train_X_masterpath, train_y_masterpath)
     # dr.get_file_lists()
     dr.get_file_lists_colab()
-    train, val = dr.get_tf_data(new_size = (256, 256))
+    train, val = dr.get_tf_data(new_size = (256, 256), desired_amount=desired_amount)
 
     AT = tf.data.AUTOTUNE
     #buffersize
     BUFFER = 1000
     BATCH = 32
-    STEPS_PER_EPOCH = 800//BATCH
-    VALIDATION_STEPS = 200//BATCH
 
     train = dr.augment(train)
     train = train.cache().shuffle(BUFFER).batch(BATCH).repeat()
