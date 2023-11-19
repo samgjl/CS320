@@ -1,21 +1,16 @@
-import os
-import numpy as np
-import pathlib
-import IPython.display as display
+# This code follows Kevin Kibe's tutorial on Deep learning for Image Segmentation with Tensorflow.
+# Linked here: https://www.analyticsvidhya.com/blog/2023/04/deep-learning-for-image-segmentation-with-tensorflow/#Defining_and_Building_the_Model
+# Our modifications:
+# * Data loading
+# * Plotting mechanism
+# * Compilation --- instead of 59 classes, we now look for 2.
+# * Contracting path (a.k.a. "Downstack") is now trainable.
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow_examples.models.pix2pix import pix2pix
-# import tensorflow_datasets as tfd
 import keras
-import keras_cv
-from keras import layers
-from keras.models import Sequential
-from tqdm import tqdm
-import sklearn
 from sklearn.model_selection import train_test_split
-import importlib.util
-import sys
 from data_reader import DataReader
 
 train_X_masterpath = "data/train/images"

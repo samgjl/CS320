@@ -1,24 +1,15 @@
-import os
+# This is intended to display our loss and accuracy as functions over the number of epochs.
+# This also tests our data on  XView2's provided "test" dataset.
 import numpy as np
-import pathlib
-import IPython.display as display
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow_examples.models.pix2pix import pix2pix
-# import tensorflow_datasets as tfd
 import keras
-import keras_cv
-from keras import layers
-from keras.models import Sequential
-from tqdm import tqdm
-import sklearn
 from sklearn.model_selection import train_test_split
-import importlib.util
-import sys
 from data_reader import DataReader
 import json
 
+# Get the data:
 BATCH = 32
 test_X_masterpath = "data/test/images"
 test_y_masterpath = "data/test/targets"
@@ -30,18 +21,11 @@ test = test.batch(BATCH)
 # get model
 unet = keras.models.load_model("model2_training/model2.keras")
 # prediction on test
-# unet.compile(loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-#             optimizer=keras.optimizers.legacy.RMSprop(learning_rate=0.00025),
-#             metrics=['accuracy'])
-# results = unet.evaluate(test, batch_size = BATCH, verbose=1)
-# print(results)
-
-# Confusion matrix time:
-########## THIS DOESNT WORK -> MAKE OUR OWN OUT OF A NUMPY ARRAY. SUM ALL ITEMS IN LIST for all 1s, (256x256) - (# of 1s) = # of 0s
-# results = unet.predict(test_X.batch(batch_size=BATCH))
-# confusion_matrix = tf.math.confusion_matrix(test_y, results)
-# print(confusion_matrix)
-# DataReader.print2DList(confusion_matrix)
+unet.compile(loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            optimizer=keras.optimizers.legacy.RMSprop(learning_rate=0.00025),
+            metrics=['accuracy'])
+results = unet.evaluate(test, batch_size = BATCH, verbose=1)
+print(results)
 
 
 # Get lists for plotting:
@@ -67,30 +51,32 @@ axis[1].legend(["Train", "Validation"])
 plt.savefig("model2_results/eval_over_time.png")
 plt.show()
 
+img, mask = next(iter(test))
+# make prediction
+pred = unet.predict(img)
+plt.figure(figsize=(20,28))
+NORM = mpl.colors.Normalize(vmin=0, vmax=2)
+k = 0
+for i in pred:
+    # plot the predicted mask
+    plt.subplot(4,3,1+k*3)
+    i = tf.argmax(i, axis=-1)
+    plt.imshow(i,cmap='gray', norm=NORM)
+    plt.axis('off')
+    plt.title('Prediction')
 
-# NORM = mpl.colors.Normalize(vmin=0, vmax=2)
-# k = 0
-# for i in pred:
-#     # plot the predicted mask
-#     plt.subplot(4,3,1+k*3)
-#     i = tf.argmax(i, axis=-1)
-#     plt.imshow(i,cmap='gray', norm=NORM)
-#     plt.axis('off')
-#     plt.title('Prediction')
+    # plot the groundtruth mask
+    plt.subplot(4,3,2+k*3)
+    plt.imshow(mask[k], cmap='gray', norm=NORM)
+    plt.axis('off')
+    plt.title('Ground Truth')
 
-#     # plot the groundtruth mask
-#     plt.subplot(4,3,2+k*3)
-#     plt.imshow(mask[k], cmap='gray', norm=NORM)
-#     plt.axis('off')
-#     plt.title('Ground Truth')
-
-#     # plot the actual image
-#     plt.subplot(4,3,3+k*3)
-#     plt.imshow(img[k])
-#     plt.axis('off')
-#     plt.title('Actual Image')
-#     k += 1
-#     if k == 4: break
-# # plt.suptitle('Prediction After 20 Epochs (No Fine-tuning)', color='red', size=20)
-# plt.savefig("model3_results/result.png")
-# plt.show()
+    # plot the actual image
+    plt.subplot(4,3,3+k*3)
+    plt.imshow(img[k])
+    plt.axis('off')
+    plt.title('Actual Image')
+    k += 1
+    if k == 4: break
+plt.savefig("model2_results/result.png")
+plt.show()

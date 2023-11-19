@@ -1,20 +1,30 @@
+# This code lightly follows the sctucture of U-Net as described in Derrick Mwiti's tutorial on Creating U-Net from scratch.
+# * This code specifically references the layer structure of the contracting and expanding paths.
+# Linked here: https://www.machinelearningnuggets.com/image-segmentation-with-u-net-define-u-net-model-from-scratch-in-keras-and-tensorflow/
 import numpy as np
 import tensorflow as tf
 import keras
 import keras.backend as K
 
+# Using F1 as a loss function inspired by Michal Haltuf's blog post in Kaggle.
+# Linked here: https://www.kaggle.com/code/rejpalcz/best-loss-function-for-f1-score-metric
+@keras.saving.register_keras_serializable("CS320_final_project")
 def f1_loss(y_true, y_pred):
-    tp = K.sum(K.cast(y_true*y_pred, 'float'), axis=0)
-    tn = K.sum(K.cast((1-y_true)*(1-y_pred), 'float'), axis=0)
-    fp = K.sum(K.cast((1-y_true)*y_pred, 'float'), axis=0)
-    fn = K.sum(K.cast(y_true*(1-y_pred), 'float'), axis=0) 
+    # True/False & Positive/Negative
+    true_pos = K.sum(K.cast(y_true*y_pred, 'float'), axis=0)
+    true_neg = K.sum(K.cast((1-y_true)*(1-y_pred), 'float'), axis=0)
+    false_pos = K.sum(K.cast((1-y_true)*y_pred, 'float'), axis=0)
+    false_neg = K.sum(K.cast(y_true*(1-y_pred), 'float'), axis=0) 
+    # Get precision and Recall scores:
+    precision = true_pos / (true_pos + false_pos + K.epsilon())
+    recall = true_pos / (true_pos + false_neg + K.epsilon())
+    # Get F1 Score:
+    f1 = 2*precision*recall / (precision+recall+K.epsilon())
+    f1 = tf.where(tf.math.is_nan(f1), tf.zeros_like(f1), f1) # replace all "0 / 0" values with 0
+    f1 = K.mean(f1) # Mean all f1 scores together to get a unified loss
+    loss = 1 - f1 # A "good" F1 score is >0.7, so we're looking for <0.3 loss where possible (if we don't modify our tp/fn penalties)
+    return loss 
 
-    p = tp / (tp + fp + K.epsilon())
-    r = tp / (tp + fn + K.epsilon())
-
-    f1 = 2*p*r / (p+r+K.epsilon())
-    f1 = tf.where(tf.math.is_nan(f1), tf.zeros_like(f1), f1)
-    return 1 - K.mean(f1)
 
 class Model4:
     def __init__(self, image_dims = (256,256), safe = False):

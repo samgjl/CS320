@@ -1,4 +1,7 @@
-# THIS IS OUR FIRST MODEL TEST
+# This code very closely follows Kevin Kibe's tutorial on Deep learning for Image Segmentation with Tensorflow.
+# We added data loading, and we modified the plotting mechanism for binary displays. Other than that, this code is his.
+# Linked here: https://www.analyticsvidhya.com/blog/2023/04/deep-learning-for-image-segmentation-with-tensorflow/#Defining_and_Building_the_Model
+
 import os
 import numpy as np
 import pathlib

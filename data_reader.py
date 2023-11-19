@@ -3,7 +3,9 @@ import tensorflow as tf
 # import tensorflow_datasets as tfd
 from sklearn.model_selection import train_test_split
 
-
+# DataReader, a class build to read data into Tensorflow datasets
+# This code partially follows Kevin Kibe's tutorial on Deep learning for Image Segmentation with Tensorflow.
+# Linked here: https://www.analyticsvidhya.com/blog/2023/04/deep-learning-for-image-segmentation-with-tensorflow/#Defining_and_Building_the_Model
 class DataReader:
     def __init__(self, X_path, y_path):
         # Paths
@@ -16,6 +18,8 @@ class DataReader:
         self.val_ds = None
         self.image_size = (1024, 1024)
 
+    # Get a list of all filenames that we want.
+    # @RETURNS: list_X, list_y --- both are lists of strings.
     def get_file_lists(self, train_X_masterpath = None, train_y_masterpath = None):
         # Ensure we have paths:
         if train_X_masterpath == None:
@@ -59,6 +63,8 @@ class DataReader:
         self.y_paths = train_y_paths
         return train_X_paths, train_y_paths
     
+    # Get a list of all filenames that we want. (Colab/Mac version)
+    # @RETURNS: list_X, list_y --- both are lists of strings.
     def get_file_lists_colab(self, train_X_masterpath = None, train_y_masterpath = None):
         # Ensure we have paths:
         if train_X_masterpath == None:
@@ -91,7 +97,6 @@ class DataReader:
                     continue
                 # add path to list
                 train_y_paths.append(path)
-
         # Sort the data so each point is in the same position:
         train_X_paths.sort()
         train_y_paths.sort()
@@ -103,6 +108,10 @@ class DataReader:
         self.y_paths = train_y_paths
         return train_X_paths, train_y_paths
     
+    # Turn the data into Tensorflow Datasets.
+    # @SPECIAL PARAMS: test_data --- boolean, tells us if the method should split the data into train/val
+    # @RETURNS: test_data == True : train, val --- TF datasets
+    # @RETURNS: test_data == False: test, test_X, test_y --- TF datasets, test is zipped from the latter two.
     def get_tf_data(self, X_paths = None, y_paths = None, new_size = None, desired_amount = None, test_data=False):
         # Ensure we have paths:
         if X_paths == None:
@@ -145,25 +154,24 @@ class DataReader:
         
         return test_ds, test_X, test_y
     
+    # Although this function is mine, all data augmentation functions are Kevin Kibe's.
     def augment(self, train_ds):
         # Augment the data:
-        a = train_ds.map(self.flip_hori)
-        b = train_ds.map(self.flip_vert)
-        c = train_ds.map(self.rotate)
-        d = train_ds.map(self.brightness)
-        e = train_ds.map(self.gamma)
-        f = train_ds.map(self.hue)
-        g = train_ds.map(self.crop)
-
-        train_ds = train_ds.concatenate(a)
-        train_ds = train_ds.concatenate(b)
-        train_ds = train_ds.concatenate(c)
-        train_ds = train_ds.concatenate(d)
-        train_ds = train_ds.concatenate(e)
-        train_ds = train_ds.concatenate(f)
+        horiz = train_ds.map(self.flip_hori)
+        vert = train_ds.map(self.flip_vert)
+        rot = train_ds.map(self.rotate)
+        bright = train_ds.map(self.brightness)
+        gamma = train_ds.map(self.gamma)
+        hue = train_ds.map(self.hue)
+        # Concatenate:
+        train_ds = train_ds.concatenate(horiz)
+        train_ds = train_ds.concatenate(vert)
+        train_ds = train_ds.concatenate(rot)
+        train_ds = train_ds.concatenate(bright)
+        train_ds = train_ds.concatenate(gamma)
+        train_ds = train_ds.concatenate(hue)
         return train_ds
 
-    
     def resize_image(self, image, size = (128,128)):
         # scale the image
         image = tf.cast(image, tf.float32)
@@ -222,23 +230,9 @@ class DataReader:
         img = tf.image.rot90(img)
         mask = tf.image.rot90(mask)
         return img, mask
-    
-    # From Sam -- PS5
-    def print2DList(list2D):
-        print("Row: Actual | Column: Prediction")
-        # Header
-        print("  |", end = "")
-        for i in range(len(list2D)):
-            print("{:4}".format(i), end = "")
-        print("\n" + "-----"*len(list2D))
-        # Printing the list:
-        for i in range(len(list2D)):
-            print(i, "|", end = "")
-            for j in range(len(list2D[i])):
-                print("{:4}".format(list2D[i,j]), end = "")
-                print()
-        print("\n")
 
+# Just a shorthand method to automate grabbing our training and validation data.
+# @RETURNS: train, val --- both tf dtasets zipped from X,y values
 def default_method(desired_amount = None):
     train_X_masterpath = "data/train/images"
     train_y_masterpath = "data/train/targets"
@@ -260,7 +254,7 @@ def default_method(desired_amount = None):
 
     return train, val
 
-            
+# Demo:            
 if __name__ == "__main__":
     dr = DataReader("data/train/images", "data/train/targets")
     one, two = dr.get_file_lists()

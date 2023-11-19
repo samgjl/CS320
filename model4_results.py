@@ -1,52 +1,83 @@
-import os
 import numpy as np
-import pathlib
 import IPython.display as display
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow_examples.models.pix2pix import pix2pix
-# import tensorflow_datasets as tfd
 import keras
-import keras_cv
-from keras import layers
-from keras.models import Sequential
-from tqdm import tqdm
-import sklearn
 from sklearn.model_selection import train_test_split
-import importlib.util
-import sys
 from data_reader import *
-from model4 import Model4
+from model4 import *
 import random
+import json
 
-unet = keras.models.load_model("model4_training/model4.keras")
+# Get our model:
+unet = keras.models.load_model("model4_training/model4_f1.keras")
+# Data config:
+BATCH = 32
+test_X_masterpath = "data/test/images"
+test_y_masterpath = "data/test/targets"
+dr_test = DataReader(test_X_masterpath, test_y_masterpath)
+dr_test.get_file_lists_colab()
+test, test_X, test_y = dr_test.get_tf_data(new_size = (256, 256), test_data = True)
+test = test.batch(BATCH)
+
+# get model
+unet = keras.models.load_model("model4_training/model4_f1.keras")
+results = unet.evaluate(test, batch_size = BATCH, verbose=1)
+print(results)
 
 
-train, val = default_method(desired_amount=10)
-# select a validation data batch
-img, mask = next(iter(val))
-# make prediction
-pred = unet.predict(img)
-plt.figure(figsize=(20,28))
+# Get lists for plotting:
+m2training_file = open("model4_training/model4_f1_initial.txt", "r")
+model_training = json.loads(m2training_file.read().replace('\'', '\"'))
+train_loss = model_training["loss"]
+train_acc = model_training["accuracy"]
+
+val_loss = model_training["val_loss"]
+val_acc = model_training["val_accuracy"]
+
+prec = model_training["precision"]
+val_prec = model_training["val_precision"]
+recall = model_training["recall"]
+val_rec = model_training["val_recall"]
+
+f1 = np.array(prec) * np.array(recall) * 2 / (np.array(prec) + np.array(recall))
+val_f1 = np.array(val_prec) * np.array(val_rec) * 2 / (np.array(val_prec) + np.array(val_rec))
+
+# Plot:
+X = np.arange(0, len(train_loss), 1)
+fig, axis = plt.subplots(2, 3)
+axis[0, 0].plot(train_loss)
+axis[0, 0].plot(val_loss)
+
+axis[0, 1].plot(train_acc)
+axis[0, 1].plot(val_acc)
+
+axis[1, 0].plot(prec)
+axis[1, 0].plot(val_prec)
+
+axis[1, 1].plot(recall)
+axis[1, 1].plot(val_rec)
+
+axis[1, 2].plot(f1)
+axis[1, 2].plot(val_f1)
+
+axis[0, 0].set_xlabel("Epoch")
+axis[0, 1].set_xlabel("Epoch")
+axis[1, 0].set_xlabel("Epoch")
+axis[1, 1].set_xlabel("Epoch")
+axis[1, 2].set_xlabel("Epoch")
+
+axis[0, 0].set_ylabel("Loss")
+axis[0, 1].set_ylabel("Accuracy")
+axis[1, 0].set_ylabel("Precision")
+axis[1, 1].set_ylabel("Recall")
+axis[1, 2].set_ylabel("F1 Score")
+axis[0, 0].legend(["Train", "Validation"])
+axis[0, 1].legend(["Train", "Validation"])
+axis[1, 0].legend(["Train", "Validation"])
+axis[1, 1].legend(["Train", "Validation"])
+axis[1, 2].legend(["Train", "Validation"])
+plt.savefig("model4_results/eval_over_time.png")
+plt.show()
 
 
-def display(display_list):
-    plt.figure(figsize=(15, 15))
-
-    title = ['Predicted mask', 'True mask', 'Input image']
-
-    for i in range(len(display_list)):
-        plt.subplot(1, len(display_list), i+1)
-        plt.title(title[i])
-        plt.imshow(tf.keras.utils.array_to_img(display_list[i]))
-        plt.axis('off')
-    plt.savefig("model4_results/result.png")
-    # plt.show()
-  
-i = random.randint(0, len(img))
-sample_image = img[i]
-sample_mask = mask[i]
-prediction = unet.predict(sample_image[tf.newaxis, ...])[0]
-predicted_mask = (prediction > 0.5).astype(np.uint8)
-display([predicted_mask, sample_mask, sample_image])
