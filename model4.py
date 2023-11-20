@@ -1,5 +1,7 @@
 # This code lightly follows the sctucture of U-Net as described in Derrick Mwiti's tutorial on Creating U-Net from scratch.
-# * This code specifically references the layer structure of the contracting and expanding paths.
+# Specifically, we reference::
+#  * The name of the layer for normalization (BatchNormalization)
+#  * The use of the concatenate layer to combine the contracting and expanding paths (which output goes first, specifically)
 # Linked here: https://www.machinelearningnuggets.com/image-segmentation-with-u-net-define-u-net-model-from-scratch-in-keras-and-tensorflow/
 import numpy as np
 import tensorflow as tf
@@ -27,28 +29,28 @@ def f1_loss(y_true, y_pred):
 
 
 class Model4:
-    def __init__(self, image_dims = (256,256), safe = False):
-        if not safe:
-            self.make_base_model()
+    # Initialize the model
+    # NOTE: We don't compile the model here. You must compile with either BCE or F1 loss later.
+    def __init__(self, image_dims = (256,256), one_function = False):
+        if not one_function:
+            self.make_base_model(image_dims = image_dims)
         else:
-            self.make_base_model_one_function()
+            self.make_base_model_one_function(image_dims=image_dims)
         
         self.model = keras.Model(inputs=self.input, outputs=self.output)
 
-    def compile_bce(self, lr = 0.001):
-        self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=lr),
-                    loss=keras.losses.BinaryCrossentropy(),
-                    metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
+    # Compile the model with the F1 loss function
     def compile_f1(self, lr = 0.001):
         self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=lr),
                     loss=f1_loss,
                     metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
+    # Compile the model with the Sparse Categorical Crossentropy loss function
     def compile_scce(self, lr = 0.001):
         self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=lr),
                     loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                     metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
 
-    # This function will make a U-Net style model
+    # Make a U-Net style model
     def make_base_model(self, image_dims = (256, 256)):
         # Input layer:
         self.input = keras.layers.Input(shape=[image_dims[0], image_dims[1], 3])
@@ -63,17 +65,19 @@ class Model4:
         upscale4 = self.expanding_layer(filters=128, previous_layer=lowest_layer, match_layer=contract4)
         upscale3 = self.expanding_layer(filters=64, previous_layer=upscale4, match_layer=contract3)
         upscale2 = self.expanding_layer(filters=32, previous_layer=upscale3, match_layer=contract2)
-        # upscale1 = self.expanding_layer(filters=16, previous_layer=upscale2, match_layer=activation1)
         # Expanding path (1):
         upscale1 = keras.layers.Conv2DTranspose(16, (2,2), strides=(2,2), padding="same")(upscale2)
-        upscale1 = keras.layers.concatenate([upscale1, contract1], axis=3) # Why is this different ??????????????????
+        upscale1 = keras.layers.concatenate([upscale1, contract1], axis=3) # Flatten your axes!
         upscale1 = keras.layers.BatchNormalization()(upscale1)
         upscale1 = keras.layers.Activation("ReLU")(upscale1)
         # Output layer:
         self.output = keras.layers.Conv2D(1, (1,1), activation="sigmoid")(upscale1) # We want this to be sigmoid so we get binary output
 
         return self.input, self.output
+    
+    #-#-#-#-# LAYER DEFINITIONS #-#-#-#-#
 
+    # Convolution -> Dropout -> Convolution (skip layer) -> Batch Normalization -> ReLU -> Max Pooling (reduction layer)
     def contracting_layer(self, filters = 1, previous_layer = None):
         contract1 = keras.layers.Conv2D(filters, (3,3), activation="ReLU", kernel_initializer=keras.initializers.HeNormal(), padding="same")(previous_layer) # Uses he_normal initializer (arxiv.org/abs/1502.01852)
         contract1 = keras.layers.Dropout(0.1)(contract1) # Dropout layer
@@ -82,7 +86,8 @@ class Model4:
         activation1 = keras.layers.Activation("ReLU")(batch_norm1) # ReLU activation layer (layers.Relu() also works)
         max_pool1 = keras.layers.MaxPooling2D((2,2))(activation1) # Max pooling layer
         return contract1, max_pool1 
-
+   
+    # Convolution -> Dropout -> Convolution -> Batch Normalization -> ReLU
     def lowest_layer(self, filters = 1, previous_layer = None):
         # Lowest Layer:
         lowest_layer = keras.layers.Conv2D(filters, (3,3), activation="ReLU", kernel_initializer=keras.initializers.HeNormal(), padding="same")(previous_layer)
@@ -93,7 +98,7 @@ class Model4:
         lowest_layer = keras.layers.Conv2D(filters, (3,3), activation="ReLU", kernel_initializer=keras.initializers.HeNormal(), padding="same")(lowest_layer)
         return lowest_layer
 
-    
+    # Upsampling -> Concatenation -> Batch Normalization -> ReLU
     def expanding_layer(self, filters = 1, previous_layer = None, match_layer = None):
         upscale = keras.layers.Conv2DTranspose(filters, (2,2), strides=(2,2), padding="same")(previous_layer) # Upsampling layer
         upscale = keras.layers.concatenate([upscale, match_layer]) # Concatenate to the corresponding place in the U
@@ -101,6 +106,15 @@ class Model4:
         upscale = keras.layers.Activation("ReLU")(upscale) # ReLU activation layer
         return upscale
     
+    #-#-#-#-# LEGACY FUNCTIONS #-#-#-#-#
+
+    # (deprecated, broken) Compile the model with the binary crossentropy loss function 
+    def compile_bce(self, lr = 0.001):
+        self.model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=lr),
+                    loss=keras.losses.BinaryCrossentropy(),
+                    metrics=['accuracy', keras.metrics.Precision(), keras.metrics.Recall()])
+
+    # (deprecated) make a U-Net stlye model in one function for safety
     def make_base_model_one_function(self, image_dims = (256, 256)):
         # Input layer:
         self.input = keras.layers.Input(shape=[image_dims[0], image_dims[1], 3])
@@ -161,13 +175,11 @@ class Model4:
         upscale1 = keras.layers.Activation("ReLU")(upscale1)
         
         # Output layer:
-        self.output = keras.layers.Conv2D(2, (1,1), activation="sigmoid")(upscale1) # We want this to be sigmoid so we get binary output
-
-        
-            
+        self.output = keras.layers.Conv2D(2, (1,1), activation="sigmoid")(upscale1) # We want this to be sigmoid so we get output in [0,1]
 
 
+# DEMO:
 if __name__ == "__main__":
-    test_model = Model4(safe = False)
+    test_model = Model4()
     test_model.model.summary()
 
